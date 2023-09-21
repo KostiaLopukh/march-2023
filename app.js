@@ -1,114 +1,99 @@
-// const Events = require('node:events');
-//
-// const eventEmitter = new Events();
-//
-// eventEmitter.on('click', ()=>{
-//   console.log('Click click click')
-// });
-//
-// eventEmitter.emit('click');
-// eventEmitter.emit('click');
-// eventEmitter.emit('click');
-// eventEmitter.emit('click');
-//
-//
-// eventEmitter.once('sayHello', ()=>{
-//   console.log('Hello hello hello');
-// });
-//
-// console.log(eventEmitter.eventNames())
-//
-// eventEmitter.emit('sayHello') // sayHello
-// eventEmitter.emit('sayHello') // event does not exist
-// eventEmitter.emit('sayHello')
-// eventEmitter.emit('sayHello')
-//
-// console.log(eventEmitter.eventNames());
-//
-// const fs = require('fs');
-// const path = require('path');
-//
-//
-// const readStream = fs.createReadStream(path.join(__dirname, 'folder', 'text3.txt'), { highWaterMark: 10000 });
-// const writeStream = fs.createWriteStream(path.join(__dirname, 'folder', 'text2.txt'));
-//
-// readStream.on('data', (chunk)=>{
-//   console.log(chunk);
-//   writeStream.write(chunk);
-// });
-//
-// readStream.pipe(writeStream);
-//
-// readStream.on('error', ()=>{
-//   console.log('error happened');
-//   readStream.destroy();
-//   writeStream.end('ERROR HAPPENED');
-// })
-
 const express = require('express');
+const fsService = require('./fs.service');
 
 const app = express();
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({extended: true}));
 
-const users = [
-  { id: 1, name: 'Іван', email: 'ivan@example.com' },
-  { id: 2, name: 'Марія', email: 'maria@example.com' },
-  { id: 3, name: 'Петро', email: 'petro@example.com' },
-  { id: 4, name: 'Ольга', email: 'olga@example.com' },
-  { id: 5, name: 'Андрій', email: 'andriy@example.com' },
-  { id: 6, name: 'Наталія', email: 'natalia@example.com' },
-  { id: 7, name: 'Максим', email: 'maxim@example.com' },
-  { id: 8, name: 'Софія', email: 'sofia@example.com' },
-  { id: 9, name: 'Анна', email: 'anna@example.com' },
-  { id: 10, name: 'Олександр', email: 'oleksandr@example.com' }
-];
+app.get('/users', async (req, res) => {
+    const users = await fsService.reader();
+    res.json(users);
+});
 
-app.get('/users', (req, res)=>{
-  res.json({
-    data: users,
-  })
+app.post('/users', async (req, res) => {
+    try {
+        const {name, email} = req.body;
+
+
+        const users = await fsService.reader();
+
+        const lastId = users[users.length - 1].id;
+        const newUser = {name, email, id: lastId + 1}
+        users.push(newUser);
+        await fsService.writer(users);
+        res.status(201).json(newUser);
+    } catch (e) {
+        res.status(400).json(e.message);
+    }
+});
+
+app.get('/users/:id', async (req, res) => {
+    try {
+        const {id} = req.params;
+        const users = await fsService.reader();
+        const user = users.find((user) => user.id === Number(id));
+        if (!user) {
+            throw new Error('User not found');
+        }
+        res.json(user);
+    } catch (e) {
+        res.status(404).json(e.message);
+    }
 })
 
-app.get('/users/:id', (req, res)=>{
-  const { id } = req.params;
+app.delete('/users/:id', async (req, res) => {
+    try {
+        const {id} = req.params;
 
-  res.json({
-    data: users[+id - 1],
-  })
-})
+        const users = await fsService.reader();
+        const index = users.findIndex((user) => user.id === Number(id));
+        if (index === -1) {
+            throw new Error('User not found');
+        }
+        users.splice(index, 1);
 
-app.post('/users', (req, res)=>{
-  users.push(req.body);
+        await fsService.writer(users);
 
-  res.status(201).json({
-    message: "User created",
-  });
-})
+        res.sendStatus(204);
+    } catch (e) {
+        res.status(404).json(e.message);
+    }
+});
 
-app.delete('/users/:id', (req, res)=>{
-  const { id } = req.params;
+app.put('/users/:id', async (req, res) => {
+    try {
+        const {id} = req.params;
+        const {name, email} = req.body;
 
-  users.splice(+id - 1, 1);
+        if (!name || name.length < 2) {
+            throw new Error('Wrong name');
+        }
+        if (!email || !email.includes('@')) {
+            throw new Error('Wrong email');
+        }
 
-  res.sendStatus(204);
-})
+        const users = await fsService.reader();
+        const user = users.find((user) => user.id === Number(id));
+        if (!user) {
+            throw new Error('User not found');
+        }
 
-app.put('/users/:id', (req, res)=>{
-  const { id } = req.params;
+        user.email = email;
+        user.name = name;
 
-  users[id] = req.body;
+        await fsService.writer(users);
 
-  res.json({
-    message: 'User updated',
-  })
-})
+        res.status(201).json(user);
+    } catch (e) {
+        res.status(404).json(e.message);
+    }
+});
 
 const PORT = 5001;
 
-app.listen(PORT, ()=>{
-  console.log(`Server has successfully started on PORT ${PORT}`);
+app.listen(PORT, () => {
+    console.log(`Server has successfully started on PORT ${PORT}`);
 })
 
 
