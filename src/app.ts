@@ -1,10 +1,11 @@
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
 import * as mongoose from "mongoose";
 
 import { configs } from "./configs/config";
-import * as fsService from "./fs.service";
+import { ApiError } from "./errors/api.error";
 import { User } from "./models/User.model";
 import { IUser } from "./types/user.type";
+import { UserValidator } from "./validators/user.validator";
 
 const app = express();
 
@@ -13,90 +14,109 @@ app.use(express.urlencoded({ extended: true }));
 
 app.get(
   "/users",
-  async (req: Request, res: Response): Promise<Response<IUser[]>> => {
-    const users = await User.find();
+  async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<Response<IUser[]>> => {
+    try {
+      const users = await User.find();
 
-    return res.json(users);
+      return res.json(users);
+    } catch (e) {
+      next(e);
+    }
   },
 );
 
 // Endpoint for creating user
-app.post("/users", async (req, res) => {
-  try {
-    const createdUser = await User.create({ ...req.body });
-    res.status(201).json(createdUser);
-  } catch (e) {
-    res.status(400).json(e.message);
-  }
+app.post(
+  "/users",
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { error, value } = UserValidator.create.validate(req.body);
+      if (error) {
+        throw new ApiError(error.message, 400);
+      }
+      const createdUser = await User.create(value);
+      res.status(201).json(createdUser);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+app.get(
+  "/users/:id",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      if (!mongoose.isObjectIdOrHexString(id)) {
+        throw new ApiError("Not valid ID", 400);
+      }
+      const user = await User.findById(id);
+      if (!user) {
+        throw new ApiError("User not found", 404);
+      }
+      res.json(user);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+app.delete(
+  "/users/:id",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      if (!mongoose.isObjectIdOrHexString(id)) {
+        throw new ApiError("Not valid ID", 400);
+      }
+      const { deletedCount } = await User.deleteOne({ _id: id });
+      if (!deletedCount) {
+        throw new ApiError("User not found", 404);
+      }
+      res.sendStatus(204);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+app.put(
+  "/users/:id",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+      if (!mongoose.isObjectIdOrHexString(id)) {
+        throw new ApiError("Not valid ID", 400);
+      }
+      const { error, value } = UserValidator.update.validate(req.body);
+      if (error) {
+        throw new ApiError(error.message, 400);
+      }
+      const user = await User.findByIdAndUpdate(id, value, {
+        returnDocument: "after",
+      });
+      if (!user) {
+        throw new ApiError("User not found", 404);
+      }
+      res.status(201).json(user);
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+app.use((error: any, req: Request, res: Response, next: NextFunction) => {
+  const status = error.status || 500;
+  res.status(status).json(error.message);
 });
 
-app.get("/users/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const users = await fsService.reader();
-    const user = users.find((user) => user.id === Number(id));
-    if (!user) {
-      throw new Error("User not found");
-    }
-    res.json(user);
-  } catch (e) {
-    res.status(404).json(e.message);
-  }
-});
-
-app.delete("/users/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const users = await fsService.reader();
-    const index = users.findIndex((user) => user.id === Number(id));
-    if (index === -1) {
-      throw new Error("User not found");
-    }
-    users.splice(index, 1);
-
-    await fsService.writer(users);
-
-    res.sendStatus(204);
-  } catch (e) {
-    res.status(404).json(e.message);
-  }
-});
-
-app.put("/users/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, email } = req.body;
-
-    if (!name || name.length < 2) {
-      throw new Error("Wrong name");
-    }
-    if (!email || !email.includes("@")) {
-      throw new Error("Wrong email");
-    }
-
-    const users = await fsService.reader();
-    const user = users.find((user) => user.id === Number(id));
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    user.email = email;
-    user.name = name;
-
-    await fsService.writer(users);
-
-    res.status(201).json(user);
-  } catch (e) {
-    res.status(404).json(e.message);
-  }
-});
-
-const PORT = 5001;
-
-app.listen(PORT, async () => {
+app.listen(configs.PORT, async () => {
   await mongoose.connect(configs.DB_URI);
-  console.log(`Server has successfully started on PORT ${PORT}`);
+  console.log(`Server has successfully started on PORT ${configs.PORT}`);
 });
 
 // CRUD c - create, r - read, u - update, d - delete
