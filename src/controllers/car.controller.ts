@@ -1,42 +1,42 @@
 import { NextFunction, Request, Response } from "express";
 
-import { userService } from "../services/user.service";
-import { IUser } from "../types/user.type";
+import { carService } from "../services/car.service";
+import { ICar } from "../types/car.type";
 
-class UserController {
+class CarController {
   public async getAll(
     req: Request,
     res: Response,
     next: NextFunction,
-  ): Promise<Response<IUser[]>> {
+  ): Promise<Response<ICar[]>> {
     try {
-      const users = await userService.getAll();
+      const cars = await carService.getAll();
 
-      return res.json(users);
+      return res.json(cars);
     } catch (e) {
       next(e);
     }
   }
-  public async createUser(
+  public async createCar(
     req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void> {
     try {
-      const user = await userService.createUser(req.body);
+      const car = await carService.createCar(req.body);
 
-      res.status(201).json(user);
+      res.status(201).json(car);
     } catch (e) {
       next(e);
     }
   }
-  public async deleteUser(
+  public async deleteCar(
     req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void> {
     try {
-      await userService.deleteUser(req.params.userId);
+      await carService.deleteCar(req.params.carId);
 
       res.sendStatus(204);
     } catch (e) {
@@ -44,15 +44,15 @@ class UserController {
     }
   }
 
-  public async updateUser(
+  public async updateCar(
     req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void> {
     try {
-      const user = await userService.updateUser(req.params.userId, req.body);
+      const car = await carService.updateCar(req.params.carId, req.body);
 
-      res.status(201).json(user);
+      res.status(201).json(car);
     } catch (e) {
       next(e);
     }
@@ -60,13 +60,13 @@ class UserController {
 
   public async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = req.res.locals;
+      const car = req.res.locals;
 
-      res.json(user);
+      res.json(car);
     } catch (e) {
       next(e);
     }
   }
 }
 
-export const userController = new UserController();
+export const carController = new CarController();

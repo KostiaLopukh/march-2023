@@ -6,9 +6,9 @@ import { userRepository } from "../repositories/user.repository";
 class UserMiddleware {
   public async getByIdOrThrow(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const { userId } = req.params;
 
-      const user = await userRepository.findById(id);
+      const user = await userRepository.findById(userId);
       if (!user) {
         throw new ApiError("User not found", 404);
       }
