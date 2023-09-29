@@ -8,10 +8,7 @@ class UserService {
   }
 
   public async createUser(dto: IUser): Promise<IUser> {
-    const user = await userRepository.getOneByParams({ email: dto.email });
-    if (user) {
-      throw new ApiError("Email already exist", 409);
-    }
+    await this.isEmailUniq(dto.email);
     return await userRepository.createUser(dto);
   }
 
@@ -21,6 +18,13 @@ class UserService {
 
   public async deleteUser(userId: string): Promise<void> {
     await userRepository.deleteUser(userId);
+  }
+
+  private async isEmailUniq(email: string): Promise<void> {
+    const user = await userRepository.getOneByParams({ email });
+    if (user) {
+      throw new ApiError("Email already exist", 409);
+    }
   }
 }
 
