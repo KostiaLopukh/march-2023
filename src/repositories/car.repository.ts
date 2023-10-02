@@ -15,7 +15,7 @@ class CarRepository {
     return await Car.findById(id);
   }
 
-  public async createCar(dto: ICar): Promise<any> {
+  public async createCar(dto: ICar): Promise<ICar> {
     return await Car.create(dto);
   }
 
