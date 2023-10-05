@@ -48,6 +48,38 @@ class AuthController {
       next(e);
     }
   }
+
+  public async logout(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<Response<void>> {
+    try {
+      const accessToken = req.res.locals.accessToken as string;
+
+      await authService.logout(accessToken);
+
+      return res.sendStatus(204);
+    } catch (e) {
+      next(e);
+    }
+  }
+
+  public async logoutAll(
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<Response<void>> {
+    try {
+      const tokenPayload = req.res.locals.tokenPayload as ITokenPayload;
+
+      await authService.logoutAll(tokenPayload.userId);
+
+      return res.sendStatus(204);
+    } catch (e) {
+      next(e);
+    }
+  }
 }
 
 export const authController = new AuthController();
