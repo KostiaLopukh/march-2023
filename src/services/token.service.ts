@@ -37,6 +37,20 @@ class TokenService {
       throw new ApiError("Token not valid!", 401);
     }
   }
+
+  public generateActionToken(payload: ITokenPayload): string {
+    return jwt.sign(payload, configs.JWT_ACTION_SECRET, {
+      expiresIn: "1d",
+    });
+  }
+
+  public checkActionToken(token: string): ITokenPayload {
+    try {
+      return jwt.verify(token, configs.JWT_ACTION_SECRET) as ITokenPayload;
+    } catch (e) {
+      throw new ApiError("Token not valid!", 401);
+    }
+  }
 }
 
 export const tokenService = new TokenService();
