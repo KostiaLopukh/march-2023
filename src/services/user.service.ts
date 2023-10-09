@@ -7,7 +7,7 @@ class UserService {
   }
 
   public async updateUser(userId: string, dto: Partial<IUser>): Promise<IUser> {
-    return await userRepository.updateUser(userId, dto);
+    return await userRepository.updateOneById(userId, dto);
   }
 
   public async deleteUser(userId: string): Promise<void> {
