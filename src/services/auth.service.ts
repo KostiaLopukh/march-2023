@@ -8,7 +8,7 @@ import { actionTokenRepository } from "../repositories/action-token.repository";
 import { tokenRepository } from "../repositories/token.repository";
 import { userRepository } from "../repositories/user.repository";
 import { ITokenPayload, ITokensPair } from "../types/token.types";
-import { IUser, IUserCredentials } from "../types/user.type";
+import { ISetNewPassword, IUser, IUserCredentials } from "../types/user.type";
 import { emailService } from "./email.service";
 import { passwordService } from "./password.service";
 import { tokenService } from "./token.service";
@@ -45,7 +45,9 @@ class AuthService {
 
   public async login(dto: IUserCredentials): Promise<ITokensPair> {
     try {
-      const user = await userRepository.getOneByParams({ email: dto.email });
+      const user = await userRepository.getOneByParams({ email: dto.email }, [
+        "password",
+      ]);
       if (!user) {
         throw new ApiError("Invalid credentials provided", 401);
       }
@@ -207,6 +209,31 @@ class AuthService {
           password: newHashedPassword,
         }),
         actionTokenRepository.deleteOne({ token: actionToken }),
+      ]);
+    } catch (e) {
+      throw new ApiError(e.message, e.status);
+    }
+  }
+
+  public async setNewPassword(
+    body: ISetNewPassword,
+    userId: string,
+  ): Promise<void> {
+    try {
+      const user = await userRepository.findById(userId);
+
+      const isMatch = await passwordService.compare(
+        body.password,
+        user.password,
+      );
+      if (!isMatch) {
+        throw new ApiError("Invalid password", 400);
+      }
+      const password = await passwordService.hash(body.newPassword);
+
+      await Promise.all([
+        userRepository.updateOneById(userId, { password }),
+        this.logoutAll(userId),
       ]);
     } catch (e) {
       throw new ApiError(e.message, e.status);
