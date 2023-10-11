@@ -8,7 +8,7 @@ import { actionTokenRepository } from "../repositories/action-token.repository";
 import { tokenRepository } from "../repositories/token.repository";
 import { userRepository } from "../repositories/user.repository";
 import { ITokenPayload, ITokensPair } from "../types/token.types";
-import { IUser, IUserCredentials } from "../types/user.type";
+import { ISetNewPassword, IUser, IUserCredentials } from "../types/user.type";
 import { emailService } from "./email.service";
 import { passwordService } from "./password.service";
 import { tokenService } from "./token.service";
@@ -22,10 +22,13 @@ class AuthService {
         ...dto,
         password: hashedPassword,
       });
-      const actionToken = tokenService.generateActionToken({
-        userId: user._id,
-        name: user.name,
-      });
+      const actionToken = tokenService.generateActionToken(
+        {
+          userId: user._id,
+          name: user.name,
+        },
+        EActionTokenType.activate,
+      );
       await actionTokenRepository.create({
         token: actionToken,
         type: EActionTokenType.activate,
@@ -42,7 +45,9 @@ class AuthService {
 
   public async login(dto: IUserCredentials): Promise<ITokensPair> {
     try {
-      const user = await userRepository.getOneByParams({ email: dto.email });
+      const user = await userRepository.getOneByParams({ email: dto.email }, [
+        "password",
+      ]);
       if (!user) {
         throw new ApiError("Invalid credentials provided", 401);
       }
@@ -109,7 +114,10 @@ class AuthService {
 
   public async activate(token: string): Promise<void> {
     try {
-      const payload = tokenService.checkActionToken(token);
+      const payload = tokenService.checkActionToken(
+        token,
+        EActionTokenType.activate,
+      );
       const entity = await actionTokenRepository.findOne({ token });
       if (!entity) {
         throw new ApiError("Not valid token", 400);
@@ -133,10 +141,13 @@ class AuthService {
         throw new ApiError("User can not be activated", 403);
       }
 
-      const actionToken = tokenService.generateActionToken({
-        userId: user._id,
-        name: user.name,
-      });
+      const actionToken = tokenService.generateActionToken(
+        {
+          userId: user._id,
+          name: user.name,
+        },
+        EActionTokenType.activate,
+      );
       await actionTokenRepository.create({
         token: actionToken,
         type: EActionTokenType.activate,
@@ -146,6 +157,84 @@ class AuthService {
         name: user.name,
         actionToken,
       });
+    } catch (e) {
+      throw new ApiError(e.message, e.status);
+    }
+  }
+
+  public async forgotPassword(user: IUser): Promise<void> {
+    try {
+      const actionToken = tokenService.generateActionToken(
+        {
+          userId: user._id,
+        },
+        EActionTokenType.forgotPassword,
+      );
+
+      await Promise.all([
+        actionTokenRepository.create({
+          token: actionToken,
+          type: EActionTokenType.forgotPassword,
+          _userId: user._id,
+        }),
+        emailService.sendMail(user.email, EEmailAction.FORGOT_PASSWORD, {
+          actionToken,
+        }),
+      ]);
+    } catch (e) {
+      throw new ApiError(e.message, e.status);
+    }
+  }
+
+  public async setForgotPassword(
+    actionToken: string,
+    newPassword: string,
+  ): Promise<void> {
+    try {
+      const payload = tokenService.checkActionToken(
+        actionToken,
+        EActionTokenType.forgotPassword,
+      );
+      const entity = await actionTokenRepository.findOne({
+        token: actionToken,
+      });
+      if (!entity) {
+        throw new ApiError("Not valid token", 400);
+      }
+
+      const newHashedPassword = await passwordService.hash(newPassword);
+
+      await Promise.all([
+        userRepository.updateOneById(payload.userId, {
+          password: newHashedPassword,
+        }),
+        actionTokenRepository.deleteOne({ token: actionToken }),
+      ]);
+    } catch (e) {
+      throw new ApiError(e.message, e.status);
+    }
+  }
+
+  public async setNewPassword(
+    body: ISetNewPassword,
+    userId: string,
+  ): Promise<void> {
+    try {
+      const user = await userRepository.findById(userId);
+
+      const isMatch = await passwordService.compare(
+        body.password,
+        user.password,
+      );
+      if (!isMatch) {
+        throw new ApiError("Invalid password", 400);
+      }
+      const password = await passwordService.hash(body.newPassword);
+
+      await Promise.all([
+        userRepository.updateOneById(userId, { password }),
+        this.logoutAll(userId),
+      ]);
     } catch (e) {
       throw new ApiError(e.message, e.status);
     }
