@@ -1,0 +1,44 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "SWAGGER FOR API MARCH-2023",
+    "version": "1.0.0",
+    "title": "MARCH-2023>",
+    "contact": {
+      "email": "k0styalopuh3@gmail.com"
+    }
+  },
+  "paths": {
+    "/users": {
+      "get": {
+        "tags": ["users"],
+        "description": "get all users",
+        "summary": "get all users summary",
+        "responses": {
+          "200": {
+            "description": "RETURNED ALL MY USERS",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "User": {
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "age": {
+          "type": "integer",
+          "default": 5
+        }
+      }
+    }
+  }
+}
