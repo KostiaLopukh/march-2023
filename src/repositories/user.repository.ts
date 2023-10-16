@@ -44,6 +44,36 @@ class UserRepository {
   public async deleteUser(userId: string): Promise<void> {
     await User.deleteOne({ _id: userId });
   }
+  public async findWithoutActivityAfterDate(date: string): Promise<IUser[]> {
+    return await User.aggregate([
+      {
+        $lookup: {
+          from: "tokens",
+          localField: "_id",
+          foreignField: "_userId",
+          as: "tokens",
+        },
+      },
+      {
+        $match: {
+          tokens: {
+            $not: {
+              $elemMatch: {
+                createdAt: { $gte: date },
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          email: 1,
+        },
+      },
+    ]);
+  }
 }
 
 export const userRepository = new UserRepository();

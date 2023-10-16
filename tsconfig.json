@@ -10,5 +10,6 @@
     "removeComments": true,                           /* Disable emitting comments. */
     "noImplicitAny": true,                            /* Enable error reporting for expressions and declarations with an implied 'any' type. */
     "skipLibCheck": true,                                /* Skip type checking all .d.ts files. */
+    "resolveJsonModule": true
   }
 }
