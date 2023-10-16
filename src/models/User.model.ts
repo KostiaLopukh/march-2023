@@ -1,8 +1,21 @@
-import { model, Schema } from "mongoose";
+import { Model, model, Schema } from "mongoose";
 
 import { EGenders } from "../enums/gender.enum";
 import { EUserStatus } from "../enums/user-status.enum";
 import { IUser } from "../types/user.type";
+
+export interface IUserModel
+  extends Model<IUser, object, IUserMethods, IUserVirtuals> {
+  findByEmail(email: string): Promise<IUser>;
+}
+
+interface IUserMethods {
+  nameWithAge(): string;
+}
+
+interface IUserVirtuals {
+  birthYear: number;
+}
 
 const userSchema = new Schema(
   {
@@ -43,4 +56,24 @@ const userSchema = new Schema(
   },
 );
 
-export const User = model<IUser>("user", userSchema);
+userSchema.methods = {
+  nameWithAge(): string {
+    return `${this.name} is ${this.age} years old`;
+  },
+};
+
+userSchema.statics = {
+  async findByEmail(email): Promise<IUser> {
+    return this.findOne({ email });
+  },
+};
+
+userSchema.virtual("birthYear").get(function () {
+  if (this.age) {
+    const currentYear = new Date().getFullYear();
+    return currentYear - this.age;
+  }
+  return null;
+});
+
+export const User = model<IUser, IUserModel>("user", userSchema);

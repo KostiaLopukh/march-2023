@@ -34,10 +34,10 @@ class AuthService {
         type: EActionTokenType.activate,
         _userId: user._id,
       });
-      await emailService.sendMail(dto.email, EEmailAction.REGISTER, {
-        name: dto.name,
-        actionToken,
-      });
+      // await emailService.sendMail(dto.email, EEmailAction.REGISTER, {
+      //   name: dto.name,
+      //   actionToken,
+      // });
     } catch (e) {
       throw new ApiError(e.message, e.status);
     }
@@ -153,10 +153,10 @@ class AuthService {
         type: EActionTokenType.activate,
         _userId: user._id,
       });
-      await emailService.sendMail(user.email, EEmailAction.REGISTER, {
-        name: user.name,
-        actionToken,
-      });
+      // await emailService.sendMail(user.email, EEmailAction.REGISTER, {
+      //   name: user.name,
+      //   actionToken,
+      // });
     } catch (e) {
       throw new ApiError(e.message, e.status);
     }
