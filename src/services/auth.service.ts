@@ -177,9 +177,9 @@ class AuthService {
           type: EActionTokenType.forgotPassword,
           _userId: user._id,
         }),
-        emailService.sendMail(user.email, EEmailAction.FORGOT_PASSWORD, {
-          actionToken,
-        }),
+        // emailService.sendMail(user.email, EEmailAction.FORGOT_PASSWORD, {
+        //   actionToken,
+        // }),
       ]);
     } catch (e) {
       throw new ApiError(e.message, e.status);

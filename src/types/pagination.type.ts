@@ -1,9 +1,9 @@
 export interface IQuery {
-  page: string;
-  limit: string;
+  page: number;
+  limit: number;
   sortedBy: string;
 
-  [key: string]: string;
+  [key: string]: string | number;
 }
 
 export interface IPaginationResponse<T> {
