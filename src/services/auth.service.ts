@@ -1,7 +1,6 @@
 import { ObjectId } from "mongodb";
 
 import { EActionTokenType } from "../enums/actionTokenType.enum";
-import { EEmailAction } from "../enums/email.action.enum";
 import { EUserStatus } from "../enums/user-status.enum";
 import { ApiError } from "../errors/api.error";
 import { actionTokenRepository } from "../repositories/action-token.repository";
@@ -9,7 +8,6 @@ import { tokenRepository } from "../repositories/token.repository";
 import { userRepository } from "../repositories/user.repository";
 import { ITokenPayload, ITokensPair } from "../types/token.types";
 import { ISetNewPassword, IUser, IUserCredentials } from "../types/user.type";
-import { emailService } from "./email.service";
 import { passwordService } from "./password.service";
 import { tokenService } from "./token.service";
 
