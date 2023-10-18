@@ -1,10 +1,34 @@
 import { ApiError } from "../errors/api.error";
+import { User } from "../models/User.model";
 import { userRepository } from "../repositories/user.repository";
+import { IPaginationResponse, IQuery } from "../types/pagination.type";
 import { IUser } from "../types/user.type";
 
 class UserService {
-  public async getAll(): Promise<IUser[]> {
-    return await userRepository.getAll();
+  public async getAllWithPagination(
+    query: IQuery,
+  ): Promise<IPaginationResponse<IUser>> {
+    try {
+      const [users, itemsFound] = await userRepository.getMany(query);
+
+      const user = await User.findOne({
+        email: "julianne.oconner@kory.org",
+      });
+
+      // const userNameWithAge = user.nameWithAge(); // name + age
+
+      // const user = await User.findByEmail("julianne.oconner@kory.org");
+      // console.log(user);
+
+      return {
+        page: +query.page,
+        limit: +query.limit,
+        itemsFound,
+        data: users,
+      };
+    } catch (e) {
+      throw new ApiError(e.message, e.status);
+    }
   }
 
   public async updateUser(

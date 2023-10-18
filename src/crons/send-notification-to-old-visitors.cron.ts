@@ -18,9 +18,9 @@ const handler = async function () {
 
     await Promise.all([
       users.map(async (user) => {
-        await emailService.sendMail(user.email, EEmailAction.OLD_VISIT, {
-          name: user.name,
-        });
+        // await emailService.sendMail(user.email, EEmailAction.OLD_VISIT, {
+        //   name: user.name,
+        // });
       }),
     ]);
   } catch (e) {
