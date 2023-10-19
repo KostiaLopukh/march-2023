@@ -10,6 +10,8 @@ import { ITokenPayload, ITokensPair } from "../types/token.types";
 import { ISetNewPassword, IUser, IUserCredentials } from "../types/user.type";
 import { passwordService } from "./password.service";
 import { tokenService } from "./token.service";
+import {smsService} from "./sms.service";
+import {prepareSmsService} from "./prepare-sms.service";
 
 class AuthService {
   public async register(dto: IUser): Promise<void> {
@@ -36,6 +38,7 @@ class AuthService {
       //   name: dto.name,
       //   actionToken,
       // });
+      await prepareSmsService.register(dto.phone, { name: dto.name });
     } catch (e) {
       throw new ApiError(e.message, e.status);
     }
