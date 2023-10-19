@@ -8,8 +8,10 @@ export interface IUser extends Document {
   age?: number;
   genders?: EGenders;
   email: string;
+  phone: string;
   password: string;
   status: EUserStatus;
+  avatar: string;
 }
 
 export type IUserCredentials = Pick<IUser, "email" | "password">;

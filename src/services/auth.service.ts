@@ -1,7 +1,6 @@
 import { ObjectId } from "mongodb";
 
 import { EActionTokenType } from "../enums/actionTokenType.enum";
-import { EEmailAction } from "../enums/email.action.enum";
 import { EUserStatus } from "../enums/user-status.enum";
 import { ApiError } from "../errors/api.error";
 import { actionTokenRepository } from "../repositories/action-token.repository";
@@ -9,9 +8,10 @@ import { tokenRepository } from "../repositories/token.repository";
 import { userRepository } from "../repositories/user.repository";
 import { ITokenPayload, ITokensPair } from "../types/token.types";
 import { ISetNewPassword, IUser, IUserCredentials } from "../types/user.type";
-import { emailService } from "./email.service";
 import { passwordService } from "./password.service";
 import { tokenService } from "./token.service";
+import {smsService} from "./sms.service";
+import {prepareSmsService} from "./prepare-sms.service";
 
 class AuthService {
   public async register(dto: IUser): Promise<void> {
@@ -38,6 +38,7 @@ class AuthService {
       //   name: dto.name,
       //   actionToken,
       // });
+      await prepareSmsService.register(dto.phone, { name: dto.name });
     } catch (e) {
       throw new ApiError(e.message, e.status);
     }
